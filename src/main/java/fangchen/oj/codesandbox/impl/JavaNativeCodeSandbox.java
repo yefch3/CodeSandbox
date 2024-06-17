@@ -64,6 +64,8 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         return executeCodeResponse;
     }
 
+
+    // 将代码保存为文件
     public String saveCodeAsFile(ExecuteCodeRequest executeCodeRequest) {
         String code = executeCodeRequest.getCode();
 
@@ -82,6 +84,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
     }
 
 
+    // 编译代码
     public ExecuteCmdMessage compileCode(String userCodeDir) {
         String compileCmd = String.format("javac -encoding utf-8 %s", userCodeDir + File.separator + CODE_FILE_NAME + JAVA_FILE_EXTENSION);
         // try里面是编译完成的情况，不管编译是否成功，都会执行；而catch里面是编译这个过程失败的情况
@@ -115,6 +118,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
     }
 
 
+    // 测试
     public static void main(String[] args) {
         JavaNativeCodeSandbox javaNativeCodeSandbox = new JavaNativeCodeSandbox();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
