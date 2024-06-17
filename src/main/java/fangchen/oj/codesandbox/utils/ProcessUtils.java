@@ -28,7 +28,7 @@ public class ProcessUtils {
                 while ((line = errorReader.readLine()) != null) {
                     error.append(line);
                 }
-                executeCmdMessage.setError(error.toString());
+                executeCmdMessage.setMessage(error.toString());
             }
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Get process info failed", e);

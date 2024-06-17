@@ -23,23 +23,37 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
         String userCodeDir = saveCodeAsFile(executeCodeRequest);
 
-        JudgeResult judgeResult = compileCode(userCodeDir);
+        ExecuteCmdMessage compileCmdMessage = compileCode(userCodeDir);
+        JudgeResult judgeResult = new JudgeResult(null, null, 0L, 0L);
 
         // 编译失败的情况
         ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
-        if (judgeResult.getResult().equals(ProblemSubmitJudgeResultEnum.COMPILE_ERROR.getValue())) {
+        if (compileCmdMessage.getExitValue() != 0) {
+            judgeResult.setMessage(compileCmdMessage.getMessage());
+            judgeResult.setResult(ProblemSubmitJudgeResultEnum.COMPILE_ERROR.getValue());
             executeCodeResponse.setJudgeResult(judgeResult);
             cleanCode(userCodeDir);
             return executeCodeResponse;
         }
 
-        // 编译成功的情况
+        // 编译成功的情况，那就运行代码，如果有错误，直接返回错误信息
         List<String> inputList = executeCodeRequest.getInputList();
-        List<String> actualOutputList = runCode(userCodeDir, inputList);
-        executeCodeResponse.setOutputList(actualOutputList);
-        executeCodeResponse.setJudgeResult(judgeResult);
-
+        List<String> outputList = new ArrayList<>();
+        judgeResult.setResult(ProblemSubmitJudgeResultEnum.WAITING.getValue());
+        for (String inputArgs : inputList) {
+            ExecuteCmdMessage executeCmdMessage = runCode(userCodeDir, inputArgs);
+            if (executeCmdMessage.getExitValue() != 0) {
+                judgeResult.setMessage(executeCmdMessage.getMessage());
+                judgeResult.setResult(ProblemSubmitJudgeResultEnum.WRONG_ANSWER.getValue());
+                executeCodeResponse.setJudgeResult(judgeResult);
+                cleanCode(userCodeDir);
+                return executeCodeResponse;
+            }
+            outputList.add(executeCmdMessage.getMessage());
+        }
         cleanCode(userCodeDir);
+        executeCodeResponse.setOutputList(outputList);
+        executeCodeResponse.setJudgeResult(judgeResult);
 
         return executeCodeResponse;
     }
@@ -61,50 +75,39 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         return userCodeDir;
     }
 
-    public JudgeResult compileCode(String userCodeDir) {
+
+    public ExecuteCmdMessage compileCode(String userCodeDir) {
         String compileCmd = String.format("javac -encoding utf-8 %s", userCodeDir + File.separator + CODE_FILE_NAME + JAVA_FILE_EXTENSION);
         // try里面是编译完成的情况，不管编译是否成功，都会执行；而catch里面是编译这个过程失败的情况
         try {
-            JudgeResult judgeResult = new JudgeResult();
             Process compileProcess = Runtime.getRuntime().exec(compileCmd);
             ExecuteCmdMessage executeCmdMessage = ProcessUtils.getInfo(compileProcess);
-            judgeResult.setMessage(executeCmdMessage.getMessage());
-            if (executeCmdMessage.getExitValue() == 0) {
-                judgeResult.setResult(ProblemSubmitJudgeResultEnum.WAITING.getValue());
-            } else {
-                judgeResult.setResult(ProblemSubmitJudgeResultEnum.COMPILE_ERROR.getValue());
-            }
-            return judgeResult;
+            return executeCmdMessage;
         } catch (Exception e) {
             throw new RuntimeException("Compile code failed", e);
         }
     }
 
-    // 执行代码获取输出，返回的是输出的List
-    public List<String> runCode(String userCodeDir, List<String> inputList) {
-        List<String> outputList = new ArrayList<>();
-        for (String input : inputList) {
-            String runCmd = String.format("java -cp %s %s %s", userCodeDir, CODE_FILE_NAME, input);
-            try {
-                Process runProcess = Runtime.getRuntime().exec(runCmd);
-                ExecuteCmdMessage executeCmdMessage = ProcessUtils.getInfo(runProcess);
-                String output = executeCmdMessage.getMessage();
-                if (executeCmdMessage.getExitValue() == 0) {
-                    outputList.add(output);
-                } else {
-                    throw new RuntimeException("Run code failed: " + executeCmdMessage.getError());
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Run code failed", e);
-            }
+
+    // 执行代码获取一组输出
+    public ExecuteCmdMessage runCode(String userCodeDir, String inputArgs) {
+        String runCmd = String.format("java -cp %s %s %s", userCodeDir, CODE_FILE_NAME, inputArgs);
+        try {
+            Process runProcess = Runtime.getRuntime().exec(runCmd);
+            ExecuteCmdMessage executeCmdMessage = ProcessUtils.getInfo(runProcess);
+//            System.out.println(executeCmdMessage);
+            return executeCmdMessage;
+        } catch (Exception e) {
+            throw new RuntimeException("Run code failed", e);
         }
-        return outputList;
     }
+
 
     // 这个方法是用来删除用户的代码文件夹的
     public void cleanCode(String userCodeDir) {
         FileUtil.del(userCodeDir);
     }
+
 
     public static void main(String[] args) {
         JavaNativeCodeSandbox javaNativeCodeSandbox = new JavaNativeCodeSandbox();
@@ -113,35 +116,25 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
                 public class Main {
                     public static void main(String[] args) {
                         // 检查是否提供了两个参数
-                        if (args.length != 2) {
-                            System.out.println("Please provide exactly two numbers as arguments.");
-                            return;
-                        }
 
-                        try {
-                            // 将字符串参数转换为整数
-                            int num1 = Integer.parseInt(args[0]);
-                            int num2 = Integer.parseInt(args[1]);
+                        // 将字符串参数转换为整数
+                        int num1 = Integer.parseInt(args[0]);
+                        int num2 = Integer.parseInt(args[1]);
 
-                            // 计算和
-                            int sum = num1 + num2;
+                        // 计算和
+                        int sum = num1 + num2;
 
-                            // 输出结果
-                            System.out.println(sum);
-                        } catch (NumberFormatException e) {
-                            // 捕获并处理可能的格式异常
-                            System.out.println("Invalid number format. Please provide valid integers.");
-                        }
+                        // 输出结果
+                        System.out.println(sum);
                     }
                 }
                 """;
         executeCodeRequest.setCode(code);
         List<String> inputList = new ArrayList<>();
         inputList.add("1 2");
-        inputList.add("3 4");
+        inputList.add("pk 3");
         executeCodeRequest.setInputList(inputList);
         ExecuteCodeResponse executeCodeResponse = javaNativeCodeSandbox.executeCode(executeCodeRequest);
-        System.out.println(executeCodeResponse.getOutputList().size());
-        System.out.println(executeCodeResponse.getOutputList());
+        System.out.println(executeCodeResponse);
     }
 }

@@ -9,5 +9,4 @@ public class ExecuteCmdMessage {
 
     private String message;
 
-    private String error;
 }
