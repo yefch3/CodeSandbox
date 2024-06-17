@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class ExecuteCmdMessage {
 
-    private int exitValue;
+    private Integer exitValue;
 
     private String message;
 

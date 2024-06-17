@@ -90,8 +90,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         // try里面是编译完成的情况，不管编译是否成功，都会执行；而catch里面是编译这个过程失败的情况
         try {
             Process compileProcess = Runtime.getRuntime().exec(compileCmd);
-            ExecuteCmdMessage executeCmdMessage = ProcessUtils.getInfo(compileProcess);
-            return executeCmdMessage;
+            return ProcessUtils.getInfo(compileProcess);
         } catch (Exception e) {
             throw new RuntimeException("Compile code failed", e);
         }
@@ -103,9 +102,8 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         String runCmd = String.format("java -cp %s %s %s", userCodeDir, CODE_FILE_NAME, inputArgs);
         try {
             Process runProcess = Runtime.getRuntime().exec(runCmd);
-            ExecuteCmdMessage executeCmdMessage = ProcessUtils.getInfo(runProcess);
-//            System.out.println(executeCmdMessage);
-            return executeCmdMessage;
+            //            System.out.println(executeCmdMessage);
+            return ProcessUtils.getInfo(runProcess);
         } catch (Exception e) {
             throw new RuntimeException("Run code failed", e);
         }
