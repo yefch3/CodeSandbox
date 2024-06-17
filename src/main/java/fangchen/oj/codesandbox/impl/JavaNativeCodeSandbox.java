@@ -141,7 +141,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         List<String> inputList = new ArrayList<>();
         inputList.add("1 2");
         inputList.add("2 3");
-        inputList.add("3");
+        inputList.add("3 588");
         executeCodeRequest.setInputList(inputList);
         ExecuteCodeResponse executeCodeResponse = javaNativeCodeSandbox.executeCode(executeCodeRequest);
         System.out.println(executeCodeResponse);
