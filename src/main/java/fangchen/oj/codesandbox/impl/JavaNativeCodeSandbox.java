@@ -19,6 +19,9 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
     private static final String CODE_FILE_NAME = "Main";
 
     // 沙箱执行代码只返回代码执行结果，不返回题目是否通过测试，也就是说只对JudgeResult的message写入，不对result写入
+    // 1. 编译失败，那么message就是编译失败的信息，result就是compile error
+    // 2. 编译成功，运行失败，那么message就是运行失败的信息，result就是wrong answer
+    // 3. 编译成功，运行成功，那么message空，result就是waiting，等待判题
     @Override
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
         String userCodeDir = saveCodeAsFile(executeCodeRequest);
@@ -36,7 +39,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
             return executeCodeResponse;
         }
 
-        // 编译成功的情况，那就运行代码，如果有错误，直接返回错误信息
+        // 编译成功的情况，那就运行代码，如果有错误，将输出列表添加到返回响应中，并且直接返回，后面的case不会执行
         List<String> inputList = executeCodeRequest.getInputList();
         List<String> outputList = new ArrayList<>();
         judgeResult.setResult(ProblemSubmitJudgeResultEnum.WAITING.getValue());
@@ -46,11 +49,14 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
                 judgeResult.setMessage(executeCmdMessage.getMessage());
                 judgeResult.setResult(ProblemSubmitJudgeResultEnum.WRONG_ANSWER.getValue());
                 executeCodeResponse.setJudgeResult(judgeResult);
+                executeCodeResponse.setOutputList(outputList);
                 cleanCode(userCodeDir);
                 return executeCodeResponse;
             }
             outputList.add(executeCmdMessage.getMessage());
         }
+
+        // 编译成功，运行成功的情况
         cleanCode(userCodeDir);
         executeCodeResponse.setOutputList(outputList);
         executeCodeResponse.setJudgeResult(judgeResult);
@@ -103,7 +109,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
     }
 
 
-    // 这个方法是用来删除用户的代码文件夹的
+    // 删除用户的代码文件夹
     public void cleanCode(String userCodeDir) {
         FileUtil.del(userCodeDir);
     }
@@ -132,7 +138,8 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         executeCodeRequest.setCode(code);
         List<String> inputList = new ArrayList<>();
         inputList.add("1 2");
-        inputList.add("pk 3");
+        inputList.add("2 3");
+        inputList.add("3");
         executeCodeRequest.setInputList(inputList);
         ExecuteCodeResponse executeCodeResponse = javaNativeCodeSandbox.executeCode(executeCodeRequest);
         System.out.println(executeCodeResponse);
