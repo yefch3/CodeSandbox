@@ -20,7 +20,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
 
     // 沙箱执行代码只返回代码执行结果，不返回题目是否通过测试，也就是说只对JudgeResult的message写入，不对result写入
     // 1. 编译失败，那么message就是编译失败的信息，result就是compile error
-    // 2. 编译成功，运行失败，那么message就是运行失败的信息，result就是wrong answer
+    // 2. 编译成功，运行失败，那么message就是运行失败的信息，result就是wrong answer或者input error
     // 3. 编译成功，运行成功，那么message空，result就是waiting，等待判题
     @Override
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
@@ -86,8 +86,25 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         List<String> inputList = executeCodeRequest.getInputList();
         List<String> outputList = new ArrayList<>();
         judgeResult.setResult(ProblemSubmitJudgeResultEnum.WAITING.getValue());
+        int expectedInputSize = inputList.get(0).split(" ").length;
+        long timeLimit = executeCodeRequest.getTimeLimit();
+        long maxTime = 0L;
         for (String inputArgs : inputList) {
-            ExecuteCmdMessage executeCmdMessage = runCodeInteract(userCodeDir, inputArgs);
+            ExecuteCmdMessage executeCmdMessage = runCodeInteract(userCodeDir, inputArgs, expectedInputSize);
+            // 如果超时，直接返回
+            if (executeCmdMessage.getTime() > timeLimit) {
+                judgeResult.setMessage("Time Limit Exceeded");
+                judgeResult.setResult(ProblemSubmitJudgeResultEnum.TIME_LIMIT_EXCEEDED.getValue());
+                executeCodeResponse.setJudgeResult(judgeResult);
+                executeCodeResponse.setOutputList(outputList);
+                cleanCode(userCodeDir);
+                return executeCodeResponse;
+            }
+
+            // 取最大时间来作为这次评测的时间
+            maxTime = Math.max(maxTime, executeCmdMessage.getTime());
+
+            // 如果运行出错，直接返回
             if (executeCmdMessage.getExitValue() != 0) {
                 judgeResult.setMessage(executeCmdMessage.getMessage());
                 judgeResult.setResult(ProblemSubmitJudgeResultEnum.WRONG_ANSWER.getValue());
@@ -101,6 +118,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
 
         // 编译成功，运行成功的情况
         cleanCode(userCodeDir);
+        judgeResult.setTime(maxTime);
         executeCodeResponse.setOutputList(outputList);
         executeCodeResponse.setJudgeResult(judgeResult);
 
@@ -153,11 +171,11 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
     }
 
 
-    public ExecuteCmdMessage runCodeInteract(String userCodeDir, String inputArgs) {
+    public ExecuteCmdMessage runCodeInteract(String userCodeDir, String inputArgs, int expectedInputSize) {
         String runCmd = String.format("java -cp %s %s", userCodeDir, CODE_FILE_NAME);
         try {
             Process runProcess = Runtime.getRuntime().exec(runCmd);
-            return ProcessUtils.getInfoInteract(runProcess, inputArgs);
+            return ProcessUtils.getInfoInteract(runProcess, inputArgs, expectedInputSize);
         } catch (Exception e) {
             throw new RuntimeException("Run code failed", e);
         }
@@ -199,6 +217,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
                                 
                 """;
         executeCodeRequest.setCode(code);
+        executeCodeRequest.setTimeLimit(1000L);
         List<String> inputList = new ArrayList<>();
         inputList.add("1 2");
         inputList.add("2 3");

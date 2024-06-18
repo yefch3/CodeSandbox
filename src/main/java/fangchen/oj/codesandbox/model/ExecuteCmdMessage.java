@@ -9,4 +9,7 @@ public class ExecuteCmdMessage {
 
     private String message;
 
+    private Long time;
+
+    private Long memory;
 }
