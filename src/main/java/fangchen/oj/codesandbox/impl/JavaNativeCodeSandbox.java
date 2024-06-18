@@ -184,7 +184,9 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
 
     // 删除用户的代码文件夹
     public void cleanCode(String userCodeDir) {
-        FileUtil.del(userCodeDir);
+        if (FileUtil.exist(userCodeDir)) {
+            FileUtil.del(userCodeDir);
+        }
     }
 
 
@@ -194,28 +196,28 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
         String code = """
                 import java.util.Scanner;
-                                
+                               \s
                 public class Main {
                     public static void main(String[] args) {
                         // 创建Scanner对象用于从控制台读取输入
                         Scanner scanner = new Scanner(System.in);
-                                
+                               \s
                         // 提示用户输入第一个数
                         int A = scanner.nextInt();
-                                
+                               \s
                         // 提示用户输入第二个数
                         int B = scanner.nextInt();
-                                
+                               \s
                         // 计算A和B的和
                         int sum = A + B;
-                                
+                               \s
                         // 输出结果
-                        
+                       \s
                         System.out.println(sum);
                     }
                 }
-                                
-                """;
+                               \s
+               \s""";
         executeCodeRequest.setCode(code);
         executeCodeRequest.setTimeLimit(1000L);
         List<String> inputList = new ArrayList<>();

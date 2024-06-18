@@ -91,7 +91,6 @@ public class ProcessUtils {
             }
             stopWatch.stop();
             executeCmdMessage.setTime(stopWatch.getTotalTimeMillis());
-            System.out.println(executeCmdMessage);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Get process info failed", e);
         }
