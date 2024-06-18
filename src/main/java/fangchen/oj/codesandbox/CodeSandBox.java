@@ -9,4 +9,6 @@ public interface CodeSandBox {
      * @return ExecuteCodeResponse
      */
     ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest);
+
+    ExecuteCodeResponse executeCodeInteract(ExecuteCodeRequest executeCodeRequest);
 }

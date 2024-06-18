@@ -65,6 +65,49 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
     }
 
 
+    @Override
+    public ExecuteCodeResponse executeCodeInteract(ExecuteCodeRequest executeCodeRequest) {
+        String userCodeDir = saveCodeAsFile(executeCodeRequest);
+
+        ExecuteCmdMessage compileCmdMessage = compileCode(userCodeDir);
+        JudgeResult judgeResult = new JudgeResult(null, null, 0L, 0L);
+
+        // 编译失败的情况
+        ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
+        if (compileCmdMessage.getExitValue() != 0) {
+            judgeResult.setMessage(compileCmdMessage.getMessage());
+            judgeResult.setResult(ProblemSubmitJudgeResultEnum.COMPILE_ERROR.getValue());
+            executeCodeResponse.setJudgeResult(judgeResult);
+            cleanCode(userCodeDir);
+            return executeCodeResponse;
+        }
+
+        // 编译成功的情况，那就运行代码，如果有错误，将输出列表添加到返回响应中，并且直接返回，后面的case不会执行
+        List<String> inputList = executeCodeRequest.getInputList();
+        List<String> outputList = new ArrayList<>();
+        judgeResult.setResult(ProblemSubmitJudgeResultEnum.WAITING.getValue());
+        for (String inputArgs : inputList) {
+            ExecuteCmdMessage executeCmdMessage = runCodeInteract(userCodeDir, inputArgs);
+            if (executeCmdMessage.getExitValue() != 0) {
+                judgeResult.setMessage(executeCmdMessage.getMessage());
+                judgeResult.setResult(ProblemSubmitJudgeResultEnum.WRONG_ANSWER.getValue());
+                executeCodeResponse.setJudgeResult(judgeResult);
+                executeCodeResponse.setOutputList(outputList);
+                cleanCode(userCodeDir);
+                return executeCodeResponse;
+            }
+            outputList.add(executeCmdMessage.getMessage());
+        }
+
+        // 编译成功，运行成功的情况
+        cleanCode(userCodeDir);
+        executeCodeResponse.setOutputList(outputList);
+        executeCodeResponse.setJudgeResult(judgeResult);
+
+        return executeCodeResponse;
+    }
+
+
     // 将代码保存为文件
     public String saveCodeAsFile(ExecuteCodeRequest executeCodeRequest) {
         String code = executeCodeRequest.getCode();
@@ -110,6 +153,17 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
     }
 
 
+    public ExecuteCmdMessage runCodeInteract(String userCodeDir, String inputArgs) {
+        String runCmd = String.format("java -cp %s %s", userCodeDir, CODE_FILE_NAME);
+        try {
+            Process runProcess = Runtime.getRuntime().exec(runCmd);
+            return ProcessUtils.getInfoInteract(runProcess, inputArgs);
+        } catch (Exception e) {
+            throw new RuntimeException("Run code failed", e);
+        }
+    }
+
+
     // 删除用户的代码文件夹
     public void cleanCode(String userCodeDir) {
         FileUtil.del(userCodeDir);
@@ -121,29 +175,36 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         JavaNativeCodeSandbox javaNativeCodeSandbox = new JavaNativeCodeSandbox();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
         String code = """
+                import java.util.Scanner;
+                                
                 public class Main {
                     public static void main(String[] args) {
-                        // 检查是否提供了两个参数
-
-                        // 将字符串参数转换为整数
-                        int num1 = Integer.parseInt(args[0]);
-                        int num2 = Integer.parseInt(args[1]);
-
-                        // 计算和
-                        int sum = num1 + num2;
-
+                        // 创建Scanner对象用于从控制台读取输入
+                        Scanner scanner = new Scanner(System.in);
+                                
+                        // 提示用户输入第一个数
+                        int A = scanner.nextInt();
+                                
+                        // 提示用户输入第二个数
+                        int B = scanner.nextInt();
+                                
+                        // 计算A和B的和
+                        int sum = A + B;
+                                
                         // 输出结果
+                        
                         System.out.println(sum);
                     }
                 }
+                                
                 """;
         executeCodeRequest.setCode(code);
         List<String> inputList = new ArrayList<>();
         inputList.add("1 2");
         inputList.add("2 3");
-        inputList.add("3 588");
+        inputList.add("3 4");
         executeCodeRequest.setInputList(inputList);
-        ExecuteCodeResponse executeCodeResponse = javaNativeCodeSandbox.executeCode(executeCodeRequest);
+        ExecuteCodeResponse executeCodeResponse = javaNativeCodeSandbox.executeCodeInteract(executeCodeRequest);
         System.out.println(executeCodeResponse);
     }
 }
