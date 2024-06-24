@@ -14,7 +14,13 @@ import java.util.List;
 public class ExecuteCodeResponse {
     private List<String> outputList;
 
-    private String apiMessage;
+    private Integer exitValue;
 
-    private JudgeResult judgeResult;
+    private String message;
+
+    // 使用List存储每个case的时间和内存，方便比较在哪一个case超时或者内存超限
+
+    private List<Long> timeList;
+
+    private List<Long> memoryList;
 }

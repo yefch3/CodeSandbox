@@ -43,7 +43,7 @@ public class ProcessUtils {
     // 方法一： 超时机制
     // 方法二： 读取样例输入，用户输入的size应该和样例输入的size一致，如果不一致，那么就直接返回错误
     // 目前使用方法二，需要保证样例输入是正确的，这样可以用于让用户调试的时候调用
-    // todo：时间和内存需要获取实现
+    // todo：内存需要获取实现
     public static ExecuteCmdMessage getInfoInteract(Process process, String input, int expectedInputSize) {
         ExecuteCmdMessage executeCmdMessage = new ExecuteCmdMessage();
         try {
@@ -58,8 +58,8 @@ public class ProcessUtils {
             outputStreamWriter.flush();
 
             if (Args.length != expectedInputSize) {
-                executeCmdMessage.setMessage(String.valueOf(new RuntimeException("Input error")));
                 executeCmdMessage.setExitValue(1);
+                executeCmdMessage.setMessage("Input size is not correct");
                 outputStreamWriter.close();
                 outputStream.close();
                 inputStream.close();
