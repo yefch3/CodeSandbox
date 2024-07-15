@@ -7,7 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class CodeSandboxApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(CodeSandboxApplication.class, args);
-    }
 
+        SpringApplication.run(CodeSandboxApplication.class, args);
+
+    }
 }

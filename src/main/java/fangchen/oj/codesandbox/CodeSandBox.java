@@ -8,7 +8,7 @@ public interface CodeSandBox {
      * Execute code in CodeSandBox
      * @return ExecuteCodeResponse
      */
-    ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest);
+//    ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest);
 
     ExecuteCodeResponse executeCodeInteract(ExecuteCodeRequest executeCodeRequest);
 }

@@ -23,59 +23,6 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
     // 2. 编译成功，运行失败，返回运行失败的信息，时间，内存，输出列表均为到当前case的信息，后面的case不会执行
     // 3. 编译成功，运行成功，返回运行成功的信息，时间，内存，输出列表均为所有case的信息
     @Override
-    public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
-        String userCodeDir = saveCodeAsFile(executeCodeRequest);
-
-        ExecuteCmdMessage compileCmdMessage = compileCode(userCodeDir);
-
-        // 编译失败的情况，返回编译失败的信息，时间和内存都是0，输出列表为空
-        ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
-        if (compileCmdMessage.getExitValue() != 0) {
-            executeCodeResponse.setExitValue(compileCmdMessage.getExitValue());
-            executeCodeResponse.setMessage(compileCmdMessage.getMessage());
-            executeCodeResponse.setTimeList(new ArrayList<>());
-            executeCodeResponse.setMemoryList(new ArrayList<>());
-            executeCodeResponse.setOutputList(new ArrayList<>());
-            cleanCode(userCodeDir);
-            return executeCodeResponse;
-        }
-
-        // 编译成功的情况，那就运行代码
-        // 如果没有错误，那么将输出添加到输出列表中，继续循环
-        // 如果有错误，那么将输出添加到消息中，保存前面的正常输出列表，在此终止循环，直接返回
-        List<String> inputList = executeCodeRequest.getInputList();
-        List<String> outputList = new ArrayList<>();
-        List<Long> timeList = new ArrayList<>();
-        List<Long> memoryList = new ArrayList<>();
-        for (String inputArgs : inputList) {
-            ExecuteCmdMessage executeCmdMessage = runCode(userCodeDir, inputArgs);
-            if (executeCmdMessage.getExitValue() != 0) {
-                executeCodeResponse.setExitValue(executeCmdMessage.getExitValue());
-                executeCodeResponse.setMessage(executeCmdMessage.getMessage());
-                executeCodeResponse.setTimeList(timeList);
-                executeCodeResponse.setMemoryList(memoryList);
-                executeCodeResponse.setOutputList(outputList);
-                cleanCode(userCodeDir);
-                return executeCodeResponse;
-            }
-            outputList.add(executeCmdMessage.getMessage());
-            timeList.add(executeCmdMessage.getTime());
-            memoryList.add(executeCmdMessage.getMemory());
-        }
-
-        // 编译成功，运行成功的情况，保存输出列表，时间和内存，清理代码文件夹
-        cleanCode(userCodeDir);
-        executeCodeResponse.setExitValue(0);
-        executeCodeResponse.setMessage("");
-        executeCodeResponse.setOutputList(outputList);
-        executeCodeResponse.setTimeList(timeList);
-        executeCodeResponse.setMemoryList(memoryList);
-
-        return executeCodeResponse;
-    }
-
-
-    @Override
     public ExecuteCodeResponse executeCodeInteract(ExecuteCodeRequest executeCodeRequest) {
         String userCodeDir = saveCodeAsFile(executeCodeRequest);
 
@@ -84,7 +31,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         // 编译失败的情况
         ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
         if (compileCmdMessage.getExitValue() != 0) {
-            executeCodeResponse.setExitValue(compileCmdMessage.getExitValue());
+            executeCodeResponse.setExitValue(CmdMessageEnum.COMPILE_ERROR.getValue());
             executeCodeResponse.setMessage(compileCmdMessage.getMessage());
             executeCodeResponse.setTimeList(new ArrayList<>());
             executeCodeResponse.setMemoryList(new ArrayList<>());
@@ -101,8 +48,9 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         int expectedInputSize = inputList.get(0).split(" ").length;
         for (String inputArgs : inputList) {
             ExecuteCmdMessage executeCmdMessage = runCodeInteract(userCodeDir, inputArgs, expectedInputSize);
+            // 运行失败
             if (executeCmdMessage.getExitValue() != 0) {
-                executeCodeResponse.setExitValue(executeCmdMessage.getExitValue());
+                executeCodeResponse.setExitValue(CmdMessageEnum.RUNTIME_ERROR.getValue());
                 executeCodeResponse.setMessage(executeCmdMessage.getMessage());
                 executeCodeResponse.setTimeList(timeList);
                 executeCodeResponse.setMemoryList(memoryList);
@@ -117,7 +65,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
 
         // 编译成功，运行成功的情况
         cleanCode(userCodeDir);
-        executeCodeResponse.setExitValue(0);
+        executeCodeResponse.setExitValue(CmdMessageEnum.SUCCESS.getValue());
         executeCodeResponse.setMessage("");
         executeCodeResponse.setOutputList(outputList);
         executeCodeResponse.setTimeList(timeList);
@@ -223,7 +171,7 @@ public class JavaNativeCodeSandbox implements CodeSandBox {
         executeCodeRequest.setTimeLimit(1000L);
         List<String> inputList = new ArrayList<>();
         inputList.add("1 8");
-        inputList.add("2");
+        inputList.add("2 9");
         inputList.add("3 5");
         executeCodeRequest.setInputList(inputList);
         ExecuteCodeResponse executeCodeResponse = javaNativeCodeSandbox.executeCodeInteract(executeCodeRequest);
