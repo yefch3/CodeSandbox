@@ -1,10 +1,13 @@
 package fangchen.oj.codesandbox.controller;
 
 import fangchen.oj.codesandbox.impl.JavaDockerCodeSandbox;
-import fangchen.oj.codesandbox.impl.JavaNativeCodeSandbox;
 import fangchen.oj.codesandbox.model.ExecuteCodeRequest;
 import fangchen.oj.codesandbox.model.ExecuteCodeResponse;
+import fangchen.oj.codesandbox.service.RunCodeService;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
@@ -12,6 +15,9 @@ import java.util.List;
 
 @RestController
 public class MainController {
+
+    @Resource
+    RunCodeService runCodeService;
 
     @GetMapping("/hello")
     public String hello() {
@@ -48,6 +54,13 @@ public class MainController {
         inputList.add("512 79428");
         inputList.add("3 7");
         executeCodeRequest.setInputList(inputList);
-        return javaDockerCodeSandbox.executeCodeInteract(executeCodeRequest);
+        return javaDockerCodeSandbox.executeCodeInteract(code, inputList);
+    }
+
+    @PostMapping("/execute")
+    public ExecuteCodeResponse executeCode(@RequestBody ExecuteCodeRequest executeCodeRequest) {
+
+        return runCodeService.executeCode(executeCodeRequest);
+
     }
 }

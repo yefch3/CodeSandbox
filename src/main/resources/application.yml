@@ -1,5 +1,7 @@
 server:
   port: 8080
-spring:
-  cache:
-    type=none
+logging:
+  file:
+    name: /var/log/spring-boot-demo.log
+  level:
+    org.apache.coyote.http11: DEBUG

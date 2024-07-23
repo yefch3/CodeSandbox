@@ -1,11 +1,13 @@
 package fangchen.oj.codesandbox.model;
 
+import lombok.Getter;
 import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Getter
 public enum ProblemSubmitJudgeResultEnum {
     ACCEPTED("Accepted", "Accepted"),
     WRONG_ANSWER("Wrong Answer", "Wrong Answer"),
@@ -31,7 +33,6 @@ public enum ProblemSubmitJudgeResultEnum {
     /**
      * 获取值列表
      *
-     * @return
      */
     public static List<String> getValues() {
         return Arrays.stream(values()).map(item -> item.value).collect(Collectors.toList());
@@ -40,8 +41,6 @@ public enum ProblemSubmitJudgeResultEnum {
     /**
      * 根据 value 获取枚举
      *
-     * @param value
-     * @return
      */
     public static ProblemSubmitJudgeResultEnum getEnumByValue(String value) {
         if (ObjectUtils.isEmpty(value)) {
@@ -55,11 +54,4 @@ public enum ProblemSubmitJudgeResultEnum {
         return null;
     }
 
-    public String getValue() {
-        return value;
-    }
-
-    public String getText() {
-        return text;
-    }
 }
